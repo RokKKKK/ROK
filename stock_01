@@ -1,0 +1,26 @@
+def asset_f(year, corp_code, report_code):
+    fs = dart.finstate_all(corp=corp_code, bsns_year=year, fs_div='OFS', reprt_code=report_code) 
+    try:
+        equity = int(fs.loc[fs['sj_div'].isin(['BS']) & fs['account_id'].isin(['ifrs-full_Equity']), 'thstrm_amount'].replace(",", "")) # 당기자본(자본총계)
+        liability = int(fs.loc[fs['sj_div'].isin(['BS']) & fs['account_id'].isin(['ifrs-full_Liabilities']), 'thstrm_amount'].replace(",", "")) # 당기부채(부채총계)
+        assets = equity + liability # 자산총계
+        return assets
+    except:
+        equity = int(fs.loc[fs['sj_div'].isin(['BS']) & fs['account_id'].isin(['ifrs_Equity']), 'thstrm_amount'].replace(",", "")) # 당기자본(자본총계)
+        liability = int(fs.loc[fs['sj_div'].isin(['BS']) & fs['account_id'].isin(['ifrs_Liabilities']), 'thstrm_amount'].replace(",", "")) # 당기부채(부채총계)
+        assets = equity + liability # 자산총계
+        return assets
+
+stock_code = stock.get_market_ticker_list(date="20210520", market="KOSDAQ") # 현재일자 기준 가장 가까운 영업일의 코스닥 상장종목 리스트
+res = pd.DataFrame()
+start_date = '20170101'
+end_date = '20201231'
+for ticker in tqdm(stock_code[:100]):
+    df1 = stock.get_market_ohlcv_by_date(fromdate=start_date, todate=end_date, ticker=ticker) # 기본
+    df2 = stock.get_market_fundamental_by_date(fromdate=start_date, todate=end_date, ticker=ticker) # 계산값
+    df = pd.concat([df1, df2], axis=1)
+    df = df.assign(종목코드=ticker, 종목명=stock.get_market_ticker_name(ticker))
+    res = pd.concat([res, df], axis=0)
+    time.sleep(1)
+res = res.reset_index()
+res
